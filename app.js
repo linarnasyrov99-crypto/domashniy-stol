@@ -116,6 +116,48 @@ function showLink(kind){
   $('form').querySelector('.primary').textContent='Скопировать';
   $('shareURL').select();
 }
+// Within a balanced group of k players, k-1 direct payments always suffice.
+// Trying every distinct partner includes a partner in an optimal group.
+function minimumTransfers(players){
+  const amounts=players.map(p=>p.net);
+  const memo=new Map();
+  function search(path){
+    const remaining=amounts.filter(Boolean);
+    if(!remaining.length){best=path.slice();return}
+    const debts=remaining.filter(x=>x<0).length;
+    const lowerBound=Math.max(debts,remaining.length-debts);
+    if(path.length+lowerBound>=best.length)return;
+    const key=remaining.sort((a,b)=>a-b).join(',');
+    if(memo.has(key)&&memo.get(key)<=path.length)return;
+    memo.set(key,path.length);
+    const from=amounts.findIndex(x=>x<0);
+    const partners=amounts.map((value,i)=>({value,i})).filter(p=>p.value>0);
+    partners.sort((a,b)=>Math.abs(amounts[from]+a.value)-Math.abs(amounts[from]+b.value));
+    const tried=new Set();
+    for(const {value,i:to} of partners){
+      if(tried.has(value))continue;
+      tried.add(value);
+      const amount=Math.min(-amounts[from],value);
+      amounts[from]+=amount;
+      amounts[to]-=amount;
+      path.push({from:players[from].name,to:players[to].name,amount});
+      search(path);
+      path.pop();
+      amounts[from]-=amount;
+      amounts[to]+=amount;
+      if(best.length===path.length+lowerBound)break;
+    }
+  }
+  let best={length:Infinity};
+  search([]);
+  return best;
+}
+function settlement(rows){
+  const payments=minimumTransfers(rows.map(({n,events})=>({name:n,net:-balance(events)})));
+  const lines=payments.map(p=>'<div class="entry"><span><strong>'+esc(p.from)+'</strong> → '+esc(p.to)+'</span><b>'+money(p.amount)+'</b></div>').join('');
+  return '<section class="settlement"><h2>Кто кому переводит</h2>'+
+    (lines?'<small>Минимум платежей — '+payments.length+'</small>'+lines:'<p>Все вышли в ноль. Переводов нет.</p>')+'</section>';
+}
 function draw(){
   const g=current();
   if(historyView)return '<div class="row"><h1>История игр</h1>'+button('new','Новая сессия')+'</div><section>'+(games.length?[...games].reverse().map(s=>'<div class="entry"><div><strong>'+esc(s.name)+'</strong><small>'+date(s.time)+' · Внесено '+money(sum(s.events,false))+'</small></div>'+button('open','Открыть',s.id)+'</div>').join(''):'<p>Здесь появятся сыгранные сессии.</p>')+'</section><section class="backups"><h2>Копия истории</h2><div class="actions">'+button('export','Скачать копию данных')+button('import','Загрузить копию')+'</div></section>';
@@ -139,7 +181,7 @@ function draw(){
     return '<div class="entry"><div><strong>'+esc(e.player)+'</strong><small>'+types[e.type]+' · '+date(e.time)+'</small></div><b>'+(e.type==='exit'?'−':'+')+money(e.amount)+'</b>'+remove+'</div>';
   }).reverse().join('');
   const left=balance(g.events), live=rows.filter(r=>active(r.events)).length;
-  return '<div class="row"><div><small>'+date(g.time)+'</small><h1>'+esc(g.name)+'</h1></div>'+button('new','Новая сессия')+'</div><section class="felt"><span>Сейчас в игре</span><b>'+money(left)+'</b><p>Внесено '+money(sum(g.events,false))+' · Выплачено '+money(sum(g.events,true))+'</p></section>'+(names.length&&!live?'<p><strong>'+(left===0?'Стол сошёлся.':'Расхождение '+money(left)+'. Проверь взносы и выплаты.')+'</strong></p>':'')+'<section><div class="row"><h2>Игроки · '+live+' за столом</h2>'+button('join','Добавить игрока','','primary')+'</div>'+(cards||'<p class="empty">Добавь первого игрока и его взнос.</p>')+'</section><section><div class="row"><h2>Журнал</h2>'+(journal?button('undo','Отменить последнюю'):'')+'</div>'+(journal?'<div class="journal-list">'+journal+'</div>':'<p class="empty">Здесь появятся входы, докупы и выходы.</p>')+'</section>';
+  return '<div class="row"><div><small>'+date(g.time)+'</small><h1>'+esc(g.name)+'</h1></div>'+button('new','Новая сессия')+'</div><section class="felt"><span>Сейчас в игре</span><b>'+money(left)+'</b><p>Внесено '+money(sum(g.events,false))+' · Выплачено '+money(sum(g.events,true))+'</p></section>'+(names.length&&!live?'<p><strong>'+(left===0?'Стол сошёлся.':'Расхождение '+money(left)+'. Проверь взносы и выплаты.')+'</strong></p>':'')+(names.length && !live && left===0 ? settlement(rows) : '')+'<section><div class="row"><h2>Игроки · '+live+' за столом</h2>'+button('join','Добавить игрока','','primary')+'</div>'+(cards||'<p class="empty">Добавь первого игрока и его взнос.</p>')+'</section><section><div class="row"><h2>Журнал</h2>'+(journal?button('undo','Отменить последнюю'):'')+'</div>'+(journal?'<div class="journal-list">'+journal+'</div>':'<p class="empty">Здесь появятся входы, докупы и выходы.</p>')+'</section>';
 }
 function render(){
   $('app').innerHTML=draw();
