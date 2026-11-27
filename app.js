@@ -135,7 +135,10 @@ function draw(){
     return '<article class="card"><div class="row"><div><h3>'+esc(n)+'</h3><small>'+summary+'</small></div>'+total+'</div>'+(viewer?'':'<div class="actions">'+controls+'</div>')+'</article>';
 
   }).join('');
-  const journal=[...g.events].reverse().map(e=>'<div class="entry"><div><strong>'+esc(e.player)+'</strong> · '+types[e.type]+'<small>'+date(e.time)+'</small></div><b>'+(e.type==='exit'?'−':'+')+money(e.amount)+'</b></div>').join('');
+  const journal=g.events.map((e,index)=>{
+    const remove=!viewer && e.type==='buy' ? button('remove-buy','Удалить',index) : '';
+    return '<div class="entry"><div><strong>'+esc(e.player)+'</strong> · '+types[e.type]+'<small>'+date(e.time)+'</small></div><b>'+(e.type==='exit'?'−':'+')+money(e.amount)+'</b>'+remove+'</div>';
+  }).reverse().join('');
   const left=balance(g.events), live=rows.filter(r=>active(r.events)).length;
   return '<div class="row"><div><small>'+date(g.time)+'</small><h1>'+esc(g.name)+'</h1></div>'+button('new','Новая сессия')+'</div><section class="felt"><span>Сейчас в игре</span><b>'+money(left)+'</b><p>Внесено '+money(sum(g.events,false))+' · Выплачено '+money(sum(g.events,true))+'</p></section>'+(names.length&&!live?'<p><strong>'+(left===0?'Стол сошёлся.':'Расхождение '+money(left)+'. Проверь взносы и выплаты.')+'</strong></p>':'')+'<section><div class="row"><h2>Игроки · '+live+' за столом</h2>'+button('join','Добавить игрока','','primary')+'</div>'+(cards||'<p class="empty">Добавь первого игрока и его взнос.</p>')+'</section><section><div class="row"><h2>Журнал</h2>'+(journal?button('undo','Отменить последнюю'):'')+'</div>'+(journal||'<p class="empty">Здесь появятся входы, докупы и выходы.</p>')+'</section>';
 }
@@ -179,6 +182,19 @@ async function act(a,who){
   }
   if(a==='import')return $('file').click();
   if(a==='fast')return record('buy',who,g.unit);
+  if(a==='remove-buy'){
+    const index=Number(who);
+    const event=g.events[index];
+    if(event?.type!=='buy')return;
+    modal('Удалить докуп?','<p>'+esc(event.player)+' · '+money(event.amount)+'</p><p>'+date(event.time)+'</p>',async()=>{
+      if(current()!==g)throw Error('Игра изменилась. Открой журнал заново.');
+      const events=g.events.filter((_,i)=>i!==index);
+      await save(games.map(s=>s===g?{...g,events}:s));
+      render();notify('Докуп удалён');
+    });
+    $('form').querySelector('.primary').textContent='Удалить докуп';
+    return;
+  }
   if(a==='undo'){
     const last=g.events.at(-1);
     return modal('Отменить последнюю запись?','<p>'+esc(last.player)+' · '+types[last.type]+' · '+money(last.amount)+'</p>',async()=>{
