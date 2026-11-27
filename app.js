@@ -136,10 +136,10 @@ function draw(){
   }).join('');
   const journal=g.events.map((e,index)=>{
     const remove=!viewer && e.type==='buy' ? button('remove-buy','Удалить',index) : '';
-    return '<div class="entry"><div><strong>'+esc(e.player)+'</strong> · '+types[e.type]+'<small>'+date(e.time)+'</small></div><b>'+(e.type==='exit'?'−':'+')+money(e.amount)+'</b>'+remove+'</div>';
+    return '<div class="entry"><div><strong>'+esc(e.player)+'</strong><small>'+types[e.type]+' · '+date(e.time)+'</small></div><b>'+(e.type==='exit'?'−':'+')+money(e.amount)+'</b>'+remove+'</div>';
   }).reverse().join('');
   const left=balance(g.events), live=rows.filter(r=>active(r.events)).length;
-  return '<div class="row"><div><small>'+date(g.time)+'</small><h1>'+esc(g.name)+'</h1></div>'+button('new','Новая сессия')+'</div><section class="felt"><span>Сейчас в игре</span><b>'+money(left)+'</b><p>Внесено '+money(sum(g.events,false))+' · Выплачено '+money(sum(g.events,true))+'</p></section>'+(names.length&&!live?'<p><strong>'+(left===0?'Стол сошёлся.':'Расхождение '+money(left)+'. Проверь взносы и выплаты.')+'</strong></p>':'')+'<section><div class="row"><h2>Игроки · '+live+' за столом</h2>'+button('join','Добавить игрока','','primary')+'</div>'+(cards||'<p class="empty">Добавь первого игрока и его взнос.</p>')+'</section><section><div class="row"><h2>Журнал</h2>'+(journal?button('undo','Отменить последнюю'):'')+'</div>'+(journal||'<p class="empty">Здесь появятся входы, докупы и выходы.</p>')+'</section>';
+  return '<div class="row"><div><small>'+date(g.time)+'</small><h1>'+esc(g.name)+'</h1></div>'+button('new','Новая сессия')+'</div><section class="felt"><span>Сейчас в игре</span><b>'+money(left)+'</b><p>Внесено '+money(sum(g.events,false))+' · Выплачено '+money(sum(g.events,true))+'</p></section>'+(names.length&&!live?'<p><strong>'+(left===0?'Стол сошёлся.':'Расхождение '+money(left)+'. Проверь взносы и выплаты.')+'</strong></p>':'')+'<section><div class="row"><h2>Игроки · '+live+' за столом</h2>'+button('join','Добавить игрока','','primary')+'</div>'+(cards||'<p class="empty">Добавь первого игрока и его взнос.</p>')+'</section><section><div class="row"><h2>Журнал</h2>'+(journal?button('undo','Отменить последнюю'):'')+'</div>'+(journal?'<div class="journal-list">'+journal+'</div>':'<p class="empty">Здесь появятся входы, докупы и выходы.</p>')+'</section>';
 }
 function render(){
   $('app').innerHTML=draw();
