@@ -128,9 +128,7 @@ function draw(){
     const summary=(live?'':'Вышел · ')+'Внесено '+money(sum(events,false))+(paid?' · Выплачено '+money(paid):'');
     const total=live?'':'<strong class="'+(result<0?'neg':'pos')+'">Итог '+(result>0?'+':'')+money(result)+'</strong>';
     const controls=live
-      ? button('fast','+ '+money(g.unit),n,'fast')+
-        '<button data-act="buy" data-who="'+esc(n)+'" aria-label="Другой докуп" title="Другой докуп"><span class="buy-long">Другой докуп</span><span class="buy-short">Сумма</span></button>'+
-        button('exit','Выход',n)
+      ? button('buy','Докуп',n)+button('exit','Выход',n)
       : button('back','Вернуть за стол',n);
     const displayName=viewer?esc(n):'<button class="player-name" data-act="rename" data-who="'+esc(n)+'" aria-label="Изменить имя: '+esc(n)+'">'+esc(n)+' <span aria-hidden="true">✎</span></button>';
     return '<article class="card"><div class="row"><div><h3>'+displayName+'</h3><small>'+summary+'</small></div>'+total+'</div>'+(viewer?'':'<div class="actions">'+controls+'</div>')+'</article>';
@@ -182,7 +180,6 @@ async function act(a,who){
     const link=document.createElement('a');link.href=url;link.download='poker-history.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;
   }
   if(a==='import')return $('file').click();
-  if(a==='fast')return record('buy',who,g.unit);
   if(a==='rename'){
     return modal('Изменить имя',field('name','Имя или ник',who),async f=>{
       if(current()!==g)throw Error('Игра изменилась. Открой карточку заново.');
