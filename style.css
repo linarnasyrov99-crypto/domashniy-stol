@@ -41,3 +41,15 @@ dialog .actions {
   section > .row h2 { font-size: 20px; line-height: 1.2; }
   section > .row button { max-width: 45vw; }
 }
+.player-name {
+  background: transparent;
+  border: 0;
+  padding: 2px 0;
+  min-height: 24px;
+  max-width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.player-name span { color: #51655e; font-size: .85em; }

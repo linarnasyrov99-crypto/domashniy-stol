@@ -132,7 +132,8 @@ function draw(){
         '<button data-act="buy" data-who="'+esc(n)+'" aria-label="Другой докуп" title="Другой докуп"><span class="buy-long">Другой докуп</span><span class="buy-short">Сумма</span></button>'+
         button('exit','Выход',n)
       : button('back','Вернуть за стол',n);
-    return '<article class="card"><div class="row"><div><h3>'+esc(n)+'</h3><small>'+summary+'</small></div>'+total+'</div>'+(viewer?'':'<div class="actions">'+controls+'</div>')+'</article>';
+    const displayName=viewer?esc(n):'<button class="player-name" data-act="rename" data-who="'+esc(n)+'" aria-label="Изменить имя: '+esc(n)+'">'+esc(n)+' <span aria-hidden="true">✎</span></button>';
+    return '<article class="card"><div class="row"><div><h3>'+displayName+'</h3><small>'+summary+'</small></div>'+total+'</div>'+(viewer?'':'<div class="actions">'+controls+'</div>')+'</article>';
 
   }).join('');
   const journal=g.events.map((e,index)=>{
@@ -182,6 +183,21 @@ async function act(a,who){
   }
   if(a==='import')return $('file').click();
   if(a==='fast')return record('buy',who,g.unit);
+  if(a==='rename'){
+    return modal('Изменить имя',field('name','Имя или ник',who),async f=>{
+      if(current()!==g)throw Error('Игра изменилась. Открой карточку заново.');
+      const name=f.get('name').trim();
+      if(!name)throw Error('Введи имя игрока.');
+      if(name===who)return;
+      const folded=name.normalize('NFC').toLocaleLowerCase('ru');
+      if(g.events.some(e=>e.player!==who && e.player.normalize('NFC').toLocaleLowerCase('ru')===folded)){
+        throw Error('Это имя уже занято в этой игре.');
+      }
+      const events=g.events.map(e=>e.player===who?{...e,player:name}:e);
+      await save(games.map(s=>s===g?{...g,events}:s));
+      render();notify('Имя изменено');
+    });
+  }
   if(a==='remove-buy'){
     const index=Number(who);
     const event=g.events[index];
