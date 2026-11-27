@@ -124,7 +124,16 @@ function draw(){
   const rows=names.map(n=>({n,events:g.events.filter(e=>e.player===n)})).sort((a,b)=>Number(active(b.events))-Number(active(a.events)));
   const cards=rows.map(({n,events})=>{
     const live=active(events),result=-balance(events);
-    return '<article class="card"><div class="row"><div><h3>'+esc(n)+'</h3><small>'+ (live?'За столом':'Вышел')+' · Внесено '+money(sum(events,false))+' · Выплачено '+money(sum(events,true))+'</small></div>'+(live?'':'<strong class="'+(result<0?'neg':'pos')+'">Итог '+(result>0?'+':'')+money(result)+'</strong>')+'</div><div class="actions">'+(live?button('fast','+ '+money(g.unit),n,'fast')+button('buy','Другой докуп',n)+button('exit','Выход',n):button('back','Вернуть за стол',n))+'</div></article>';
+    const paid=sum(events,true);
+    const summary=(live?'':'Вышел · ')+'Внесено '+money(sum(events,false))+(paid?' · Выплачено '+money(paid):'');
+    const total=live?'':'<strong class="'+(result<0?'neg':'pos')+'">Итог '+(result>0?'+':'')+money(result)+'</strong>';
+    const controls=live
+      ? button('fast','+ '+money(g.unit),n,'fast')+
+        '<button data-act="buy" data-who="'+esc(n)+'" aria-label="Другой докуп" title="Другой докуп"><span class="buy-long">Другой докуп</span><span class="buy-short">Сумма</span></button>'+
+        button('exit','Выход',n)
+      : button('back','Вернуть за стол',n);
+    return '<article class="card"><div class="row"><div><h3>'+esc(n)+'</h3><small>'+summary+'</small></div>'+total+'</div>'+(viewer?'':'<div class="actions">'+controls+'</div>')+'</article>';
+
   }).join('');
   const journal=[...g.events].reverse().map(e=>'<div class="entry"><div><strong>'+esc(e.player)+'</strong> · '+types[e.type]+'<small>'+date(e.time)+'</small></div><b>'+(e.type==='exit'?'−':'+')+money(e.amount)+'</b></div>').join('');
   const left=balance(g.events), live=rows.filter(r=>active(r.events)).length;
